@@ -10,35 +10,50 @@ request.onupgradeneeded = function (event) {
 request.onsuccess = function (event) {
   db = event.target.result;
   if (navigator.onLine) {
-    requestDBData();
+    checkDatabase();
   }
 };
 
 request.onerror = function (event) {
-    console.log("Well, it appears that we have an error: " + event.target.errorCode);
-  };
+  console.log("Woops! " + event.target.errorCode);
+};
 
-function requestDBData() {
-    const transaction = db.transaction(["pending"], "readwrite");
-    const store = transaction.objectStore("pending");
-    const getAll = store.getAll();
+function saveRecord(record) {
+  const transaction = db.transaction(["pending"], "readwrite");
+  const store = transaction.objectStore("pending");
 
-getAll.onsuccess = function () {
+  store.add(record);
+}
+
+function checkDatabase() {
+  const transaction = db.transaction(["pending"], "readwrite");
+  const store = transaction.objectStore("pending");
+  const getAll = store.getAll();
+
+  getAll.onsuccess = function () {
     if (getAll.result.length > 0) {
-        fetch("/api/transaction/bulk", {
+      fetch("/api/transaction/bulk", {
         method: "POST",
         body: JSON.stringify(getAll.result),
         headers: {
-            Accept: "application/json, text/plain, */*",
-            "Content-Type": "application/json"
+          Accept: "application/json, text/plain, */*",
+          "Content-Type": "application/json"
         }
-    })
-    .then(response => response.json())
-    .then(() => {
-        const transaction = db.transaction(["pending"], "readwrite");
-        const store = transaction.objectStore("pending");
-        store.clear();
-    });
+      })
+        .then(response => response.json())
+        .then(() => {
+          const transaction = db.transaction(["pending"], "readwrite");
+          const store = transaction.objectStore("pending");
+          store.clear();
+        });
     }
   };
 }
+function deletePending() {
+  const transaction = db.transaction(["pending"], "readwrite");
+  const store = transaction.objectStore("pending");
+  store.clear();
+}
+
+
+window.addEventListener("online", checkDatabase);
