@@ -62,7 +62,7 @@ const FILES_TO_CACHE = [
         }).catch(err => console.log(err))
       );
     } else {
-      // respond from static cache, request is not for /api/*
+      // respond from static cache
       evt.respondWith(
         caches.open(CACHE_NAME).then(cache => {
           return cache.match(evt.request).then(response => {
